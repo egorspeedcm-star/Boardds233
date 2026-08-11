@@ -1,0 +1,122 @@
+-- Этот скрипт создаёт GUI-меню для изменения WalkSpeed и JumpPower игрока.
+-- Работает только для локального игрока (клиент).
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "SpeedJumpMenu"
+gui.Parent = player.PlayerGui
+
+-- Основной фрейм
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.Text = "Настройки скорости"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.Parent = frame
+
+-- Функция для создания ползунка с подписью
+local function createSlider(parent, yPos, labelText, minVal, maxVal, defaultValue, propertyName)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, -20, 0, 40)
+    container.Position = UDim2.new(0, 10, 0, yPos)
+    container.BackgroundTransparency = 1
+    container.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.Text = labelText
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.2, 0, 1, 0)
+    valueLabel.Position = UDim2.new(0.8, 0, 0, 0)
+    valueLabel.Text = tostring(defaultValue)
+    valueLabel.TextColor3 = Color3.new(1, 1, 1)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Font = Enum.Font.Gotham
+    valueLabel.TextSize = 14
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = container
+
+    local slider = Instance.new("Slider")
+    slider.Size = UDim2.new(0.4, 0, 0.6, 0)
+    slider.Position = UDim2.new(0.4, 0, 0.2, 0)
+    slider.MinValue = minVal
+    slider.MaxValue = maxVal
+    slider.Value = defaultValue
+    slider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    slider.BorderSizePixel = 0
+    slider.Parent = container
+
+    -- Обработчик изменения значения
+    slider:GetPropertyChangedSignal("Value"):Connect(function()
+        local val = math.floor(slider.Value)  -- целое число для красоты
+        valueLabel.Text = tostring(val)
+        -- Применяем к персонажу, если он существует
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid[propertyName] = val
+            end
+        end
+    end)
+
+    return slider
+end
+
+-- Создаём ползунки (Y-координаты относительно фрейма)
+local speedSlider = createSlider(frame, 35, "Скорость", 0, 100, 16, "WalkSpeed")
+local jumpSlider = createSlider(frame, 80, "Прыжок", 0, 100, 50, "JumpPower")
+
+-- Кнопка сброса
+local resetBtn = Instance.new("TextButton")
+resetBtn.Size = UDim2.new(0.3, 0, 0, 25)
+resetBtn.Position = UDim2.new(0.35, 0, 0, 125)
+resetBtn.Text = "Сброс"
+resetBtn.TextColor3 = Color3.new(1, 1, 1)
+resetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+resetBtn.BorderSizePixel = 0
+resetBtn.Font = Enum.Font.Gotham
+resetBtn.TextSize = 14
+resetBtn.Parent = frame
+
+resetBtn.MouseButton1Click:Connect(function()
+    speedSlider.Value = 16
+    jumpSlider.Value = 50
+    -- Обновить человечка сразу (слайдеры вызовут свои события)
+end)
+
+-- При смене персонажа применяем текущие значения слайдеров
+player.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.WalkSpeed = math.floor(speedSlider.Value)
+    humanoid.JumpPower = math.floor(jumpSlider.Value)
+end)
+
+-- Применяем сразу, если персонаж уже есть
+if player.Character then
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = math.floor(speedSlider.Value)
+        humanoid.JumpPower = math.floor(jumpSlider.Value)
+    end
+end
